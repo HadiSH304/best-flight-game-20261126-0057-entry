@@ -32,12 +32,14 @@ export function groundHeight(x, z) {
   const ridge = Math.exp(-((z + 1150) * (z + 1150)) / (2 * 420 * 420));
   h += 24 * ridge * falloff;
   // A flat coastal valley along the runway's east-west axis, so the
-  // landing approach flies over level ground instead of a hillside.
+  // landing approach flies over level ground instead of a hillside. The
+  // floor is flat near the centreline and rises to the hills at the
+  // valley's edges, so a touchdown anywhere in the valley is survivable.
   const dz = Math.abs(z - RUNWAY.z);
   if (dz < 260 && x > -1900 && x < 1900) {
-    const tz = smoothstep(0, 1, (260 - dz) / 130);
+    const cap = 8 + 40 * smoothstep(0, 1, (dz - 140) / 120);
     const tx = smoothstep(0, 1, Math.min(x + 1900, 1900 - x) / 200);
-    h = h * (1 - tz * tx) + 8 * tz * tx;
+    h = Math.min(h, cap) * tx + h * (1 - tx);
   }
   // Flatten the runway apron into the island.
   if (x > APRON.x0 && x < APRON.x1 && z > APRON.z0 && z < APRON.z1) {
@@ -52,6 +54,15 @@ export function groundHeight(x, z) {
 /** True when (x, z) is on the runway strip. */
 export function onRunway(x, z) {
   return Math.abs(x - RUNWAY.x) <= RUNWAY.length / 2 && Math.abs(z - RUNWAY.z) <= RUNWAY.width / 2;
+}
+
+/**
+ * True when (x, z) is on the runway or its shoulders: the landing check
+ * allows a few metres either side, so a landing a metre off the painted
+ * edge still counts as a landing, not a crash.
+ */
+export function onAirfield(x, z) {
+  return Math.abs(x - RUNWAY.x) <= RUNWAY.length / 2 + 10 && Math.abs(z - RUNWAY.z) <= RUNWAY.width / 2 + 4;
 }
 
 /** True when (x, z) is inside the touchdown zone (first third, runway 09). */

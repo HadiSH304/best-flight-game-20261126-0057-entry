@@ -541,7 +541,9 @@ export function createRenderer(canvas) {
     drawRings(camera, terrain, missions);
     drawZones(camera, terrain, missions);
     if (camera.state.view === 'cockpit') drawCockpit(flight);
-    else drawAircraft(flight, time);
+    // On the title screen the backdrop is a scenic orbit with no aircraft
+    // in it, so the plane never covers the mission buttons.
+    else if (screen !== 'title') drawAircraft(flight, time);
     // HUD on top of everything. In the cockpit the panel already carries
     // altitude, speed, heading and throttle as lit instruments, so the big
     // HUD blocks stay out of the way; in chase view they are the readout.

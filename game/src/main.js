@@ -201,7 +201,7 @@ function runGame() {
     flight.state.fuel = 100;
     flight.state.damage = 0;
     flight.state.verticalSpeed = 0;
-    renderer.draw('play', world, t);
+    renderer.draw('title', world, t);
     Object.assign(flight.state, saved);
     ctx.fillStyle = 'rgba(8,14,22,0.55)';
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
@@ -227,7 +227,7 @@ function runGame() {
       ctx.fillText(MISSIONS[i].name, bx + 105, 500);
       ctx.fillStyle = selected ? '#1c2129' : '#eef1f5';
       ctx.font = '13px system-ui, sans-serif';
-      ctx.fillText(MISSIONS[i].goal, bx + 105, 528);
+      ctx.fillText(MISSIONS[i].blurb, bx + 105, 528);
       ctx.font = '12px system-ui, sans-serif';
       ctx.fillText(`Press ${i + 1}`, bx + 105, 548);
     }

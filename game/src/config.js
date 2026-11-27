@@ -26,7 +26,7 @@ export const PLANE = {
   maxPitch: 24,
   /** Fuel percent burned per second at full throttle. */
   fuelBurn: 0.32,
-  /** Knots of wind from the west on the landing mission (crosswind). */
+  /** Knots of wind from the north on the landing mission (crosswind). */
   crosswindKt: 14,
 };
 
@@ -60,9 +60,9 @@ export const SUPPLY = {
 };
 
 export const MISSIONS = [
-  { id: 'rings', name: 'RING RUN', goal: 'Fly through all 8 rings in order' },
-  { id: 'landing', name: 'CROSSWIND LANDING', goal: 'Land on runway 09 inside the touchdown zone' },
-  { id: 'supply', name: 'SUPPLY DROP', goal: 'Drop 3 crates on the marked zones before the clock runs out' },
+  { id: 'rings', name: 'RING RUN', goal: 'Fly through all 8 rings in order', blurb: '8 rings, in order' },
+  { id: 'landing', name: 'CROSSWIND LANDING', goal: 'Land on runway 09 inside the touchdown zone', blurb: 'Land in the zone' },
+  { id: 'supply', name: 'SUPPLY DROP', goal: 'Drop 3 crates on the marked zones before the clock runs out', blurb: '3 crates, beat the clock' },
 ];
 
 export const PALETTE = {

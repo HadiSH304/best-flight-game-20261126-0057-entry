@@ -3,7 +3,7 @@
 // returns bit flags for what happened, so missions and sound can react
 // without the model knowing about screens.
 import { PLANE, RUNWAY, STEP } from './config.js';
-import { groundHeight, onRunway, inTouchdownZone } from './terrain.js';
+import { groundHeight, onAirfield, inTouchdownZone } from './terrain.js';
 
 export const EVENT_TOUCHDOWN = 1;
 export const EVENT_CRASH = 2;
@@ -117,9 +117,11 @@ export function createFlight() {
     const turnRate = (9.81 * Math.tan((state.bank * Math.PI) / 180)) / Math.max(20, speedMs);
     state.heading = (state.heading + (turnRate * 180) / Math.PI * dt + 360) % 360;
 
-    // Lift grows with speed squared; below stall the aircraft sinks.
-    const lift = clamp((state.speedKt / PLANE.stallSpeedKt) ** 2, 0, 1.6);
-    const climbMs = speedMs * Math.sin((state.pitch * Math.PI) / 180) * lift;
+    // The pitch angle is the flight path angle: the vertical speed is the
+    // speed along the flight path, so a -4 deg descent at 80 kt is about
+    // -2.8 m/s — gentle enough to land on. Below stall speed the wing
+    // stops lifting and the aircraft sinks.
+    const climbMs = speedMs * Math.sin((state.pitch * Math.PI) / 180);
     const sinkMs = stalled ? (PLANE.stallSpeedKt - state.speedKt) * KT_TO_MS * 0.55 : 0;
     state.verticalSpeed = climbMs - sinkMs;
 
@@ -129,18 +131,21 @@ export function createFlight() {
     state.y += state.verticalSpeed * dt;
 
     // Wind pushes the aircraft sideways; on the landing mission it is a
-    // crosswind from the west that the pilot must crab into.
-    state.x += (PLANE.crosswindKt * KT_TO_MS * 0.28) * dt;
+    // crosswind from the north that the pilot must crab into: it drifts
+    // the aircraft south, across runway 09.
+    state.z += (PLANE.crosswindKt * KT_TO_MS * 0.28) * dt;
 
-    // Ground contact: a gentle touchdown on the runway is a landing;
-    // anything else at speed is a crash.
+    // Ground contact: a gentle touchdown on the runway is a landing; a
+    // gentle touchdown anywhere else is a rough landing — damage once,
+    // then a roll-out the pilot can take off from again. Only a hard
+    // impact, a steeply banked touchdown or an overspeed one is a crash.
     const ground = groundHeight(state.x, state.z);
     if (state.y <= ground + 1.4) {
       state.y = ground + 1.4;
       if (!state.onGround) {
         const vs = state.verticalSpeed;
         const aligned = Math.abs(angleDelta(state.heading, RUNWAY.heading)) < 22 || Math.abs(angleDelta(state.heading, RUNWAY.heading + 180)) < 22;
-        if (onRunway(state.x, state.z) && vs > -3.2 && Math.abs(state.bank) < 12 && aligned && state.speedKt > 45 && state.speedKt < 115) {
+        if (onAirfield(state.x, state.z) && vs > -3.2 && Math.abs(state.bank) < 12 && aligned && state.speedKt > 45 && state.speedKt < 115) {
           state.onGround = true;
           state.landed = true;
           state.pitch = 0;
@@ -152,10 +157,18 @@ export function createFlight() {
           state.damage = 100;
           events |= EVENT_CRASH;
         } else {
-          // A rough touchdown off the runway: damage, bounce, keep flying.
-          state.damage = Math.min(100, state.damage + 22);
-          state.verticalSpeed = Math.abs(vs) * 0.25;
-          state.y = ground + 1.4 + 0.5;
+          // A rough touchdown: damage once per landing event, then a
+          // roll-out the pilot can take off from again. A porpoise —
+          // touch, lift, touch again within a few seconds — is one
+          // landing, not five, so damage has a short cooldown.
+          if (state.time - (state.lastRoughTouchdown ?? -99) > 3) {
+            state.damage = Math.min(100, state.damage + 22);
+            state.lastRoughTouchdown = state.time;
+          }
+          state.onGround = true;
+          state.pitch = 0;
+          state.bank = 0;
+          state.verticalSpeed = 0;
           events |= EVENT_TOUCHDOWN;
           if (state.damage >= 100) {
             state.crashed = true;
@@ -171,6 +184,17 @@ export function createFlight() {
         state.speedKt = Math.max(0, state.speedKt - 9 * dt);
         state.y = ground + 1.4;
       }
+    }
+
+    // Take-off again: full throttle and a pull on the stick lift off, so a
+    // landing outside the zone is a go-around, not a dead end. This runs
+    // outside the ground-contact block on purpose: the moment the stick
+    // pulls up, the aircraft is already climbing off the ground, and the
+    // contact block no longer runs.
+    if (state.onGround && state.throttle > 0.7 && stick.pitch > 0.2 && state.speedKt > 70) {
+      state.onGround = false;
+      state.landed = false;
+      state.pitch = 5;
     }
     return events;
   }

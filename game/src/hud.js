@@ -149,7 +149,7 @@ export function drawWarnings(ctx, flight, missions) {
   if (f.damage > 60 && f.damage < 100) warnings.push({ text: 'HEAVY DAMAGE — FLY GENTLY', color: PALETTE.hudAmber });
   if (missions.state.index === 1 && !missions.state.done && !f.onGround) {
     // Below the mission panel, never across it.
-    text(ctx, `WIND ${PLANE.crosswindKt} KT FROM THE WEST — CRAB INTO IT`, VIEW.width / 2, 130, 13, '#bcd6ea', 'center');
+    text(ctx, `WIND ${PLANE.crosswindKt} KT FROM THE NORTH — CRAB INTO IT`, VIEW.width / 2, 130, 13, '#bcd6ea', 'center');
   }
   warnings.forEach((w, i) => {
     text(ctx, w.text, VIEW.width / 2, 108 + i * 26, 17, w.color, 'center');

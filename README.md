@@ -26,7 +26,7 @@ http://localhost:8080). No build step, no network request.
 
 1. **Ring Run** — fly through all 8 rings in order around the island.
 2. **Crosswind Landing** — land on runway 09 inside the touchdown zone,
-   crabbing into a 14 kt crosswind from the west.
+   crabbing into a 14 kt crosswind from the north.
 3. **Supply Drop** — drop 3 crates on the marked zones before the clock
    runs out. Crates keep your forward speed, so lead the zone.
 
